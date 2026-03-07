@@ -21,6 +21,7 @@ class ProjectResource extends JsonResource
             'description' => $this->description,
             'created_at' => $this->created_at->toIso8601String(),
             'updated_at' => $this->updated_at->toIso8601String(),
+            'tasks_count' => $this->when(isset($this->tasks_count), fn () => (int) $this->tasks_count),
             'tasks' => TaskResource::collection($this->whenLoaded('tasks')),
         ];
     }

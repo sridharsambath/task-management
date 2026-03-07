@@ -16,17 +16,49 @@ class ProjectController extends Controller
 {
     /**
      * Display a listing of the user's projects.
+     *
+     * Query params: search (optional), sort (name, name_desc, updated_at, updated_at_asc, created_at, created_at_asc), per_page (5-50), page.
      */
     public function index(Request $request): JsonResponse
     {
         try {
-            $projects = $request->user()
-                ->projects()
-                ->with('tasks')
-                ->orderBy('updated_at', 'desc')
-                ->get();
+            $perPage = min(max((int) $request->query('per_page', 10), 5), 50);
+            $sort = $request->query('sort', 'updated_at');
+            $allowedSorts = [
+                'name' => ['name', 'asc'],
+                'name_desc' => ['name', 'desc'],
+                'updated_at' => ['updated_at', 'desc'],
+                'updated_at_asc' => ['updated_at', 'asc'],
+                'created_at' => ['created_at', 'desc'],
+                'created_at_asc' => ['created_at', 'asc'],
+            ];
+            [$sortColumn, $sortDir] = $allowedSorts[$sort] ?? $allowedSorts['updated_at'];
 
-            return response()->json(ProjectResource::collection($projects));
+            $query = $request->user()
+                ->projects()
+                ->withCount('tasks');
+
+            if ($request->filled('search')) {
+                $term = '%'.addcslashes($request->query('search'), '%_').'%';
+                $query->where(function ($q) use ($term): void {
+                    $q->where('name', 'ilike', $term)
+                        ->orWhere('description', 'ilike', $term);
+                });
+            }
+
+            $projects = $query->orderBy($sortColumn, $sortDir)->paginate($perPage);
+
+            return response()->json([
+                'data' => ProjectResource::collection($projects->items()),
+                'meta' => [
+                    'current_page' => $projects->currentPage(),
+                    'last_page'    => $projects->lastPage(),
+                    'per_page'     => $projects->perPage(),
+                    'total'        => $projects->total(),
+                    'from'         => $projects->firstItem(),
+                    'to'           => $projects->lastItem(),
+                ],
+            ]);
         } catch (\Throwable $e) {
             report($e);
 
@@ -62,17 +94,23 @@ class ProjectController extends Controller
 
     /**
      * Display the specified project.
+     *
+     * Query param: with_tasks (default 1). Set to 0 to skip loading tasks (e.g. when using GET /projects/{id}/tasks for the list).
      */
-    public function show(int $project): JsonResponse
+    public function show(Request $request, int $project): JsonResponse
     {
         try {
-            $model = Project::with('tasks')->find($project);
+            $model = Project::query()->find($project);
 
             if (! $model) {
                 return response()->json(['message' => 'Project not found.'], 404);
             }
 
             $this->authorize('view', $model);
+
+            if ($request->query('with_tasks', '1') !== '0') {
+                $model->load('tasks');
+            }
 
             return response()->json(new ProjectResource($model));
         } catch (AuthorizationException $e) {

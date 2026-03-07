@@ -17,6 +17,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::apiResource('projects', ProjectController::class);
 
+    Route::get('/projects/{project}/tasks', [TaskController::class, 'index']);
     Route::post('/projects/{project}/tasks', [TaskController::class, 'store']);
     Route::match(['put', 'patch'], '/projects/{project}/tasks/{task}', [TaskController::class, 'update']);
     Route::delete('/projects/{project}/tasks/{task}', [TaskController::class, 'destroy']);
