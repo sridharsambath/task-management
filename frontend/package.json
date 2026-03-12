@@ -9,7 +9,6 @@
     "preview": "nuxt preview"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "lucide-vue-next": "^0.577.0",
     "nuxt": "^3.14.0",
     "vue": "latest",
