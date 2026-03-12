@@ -2,9 +2,13 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
-  // @netlify/nuxt automatically sets the Nitro preset to 'netlify' when
-  // NETLIFY=true is present in the build environment.
-  modules: ['@nuxtjs/tailwindcss', '@netlify/nuxt'],
+  modules: ['@nuxtjs/tailwindcss'],
+
+  nitro: {
+    // Use Netlify's serverless-functions preset when building on Netlify CI.
+    // Falls back to the default Node server preset for local dev.
+    preset: process.env.NETLIFY ? 'netlify' : undefined,
+  },
 
   runtimeConfig: {
     // Server-only — never exposed to the browser
