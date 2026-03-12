@@ -1,0 +1,25 @@
+[build]
+  # Run npm install + nuxt build from the frontend folder.
+  # In the Netlify dashboard set "Base directory" → frontend
+  command = "npm run build"
+  publish = ".output/public"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Tells nuxt.config.ts to activate the Netlify Nitro preset
+  NETLIFY      = "true"
+
+# Security headers applied to every response
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
+
+# Long-lived immutable cache for hashed Nuxt assets
+[[headers]]
+  for = "/_nuxt/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
